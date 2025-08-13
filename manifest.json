@@ -1,10 +1,11 @@
 {
   "name": "New Tab New Art",
   "short_name": "New Tab New Art",
-  "version": "0.6",
+  "version": "0.9",
   "description": "See a new piece of art every time you open a tab.",
   "manifest_version": 3,
-   "content_scripts": [
+  "permissions": ["storage"],
+  "content_scripts": [
     {
         "matches": ["file:///*/*"],
         "js": ["jquery-3.4.1.min.js","getart.js"],
@@ -17,7 +18,6 @@
   "icons": { "16": "icon16.png",
            "48": "icon48.png",
           "128": "icon128.png" },
-  "permissions": ["activeTab"],
   "web_accessible_resources": [
     {
       "resources" : [
