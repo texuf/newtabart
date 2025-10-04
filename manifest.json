@@ -1,10 +1,11 @@
 {
   "name": "New Tab New Art",
   "short_name": "New Tab New Art",
-  "version": "2025.1",
+  "version": "2025.4",
   "description": "See a new piece of art every time you open a tab.",
   "manifest_version": 3,
   "permissions": ["storage"],
+  "options_page": "options.html",
   "content_scripts": [
     {
         "matches": ["file:///*/*"],
@@ -15,9 +16,11 @@
   "chrome_url_overrides": {
     "newtab": "newpage.html"
   },
-  "icons": { "16": "icon16.png",
-           "48": "icon48.png",
-          "128": "icon128.png" },
+  "icons": { 
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png" 
+  },
   "web_accessible_resources": [
     {
       "resources" : [
@@ -28,6 +31,5 @@
         "*://*/*"
       ]
     }
-    
   ]
 }

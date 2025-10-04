@@ -1,14 +1,15 @@
-// Museum Art Browser Extension - Refactored
+// Museum Art Browser Extension - Refactored with Postcard Feature
 class MuseumArtApp {
     constructor() {
         this.museums = {
             wht: new WhitneyMuseum(),
             aic: new ArtInstituteChicago(),
             cma: new ClevelandMuseum(),
-            met: new MetropolitanMuseum()
+            met: new MetropolitanMuseum(),
+            wmc: new WikimediaCommons()
         };
         
-        // Currently only Whitney is active
+        // Initialize with default museums (will be updated by loadSettings)
         this.activeMuseums = {
             wht: this.museums.wht,
             aic: this.museums.aic,
@@ -26,12 +27,48 @@ class MuseumArtApp {
         this.init();
     }
 
-    init() {
+    async init() {
+        // Wait for settings to load before displaying artwork
+        await this.loadSettings();
+        
         $(document).ready(() => {
             this.loadRandomArtwork();
         });
     }
 
+    async loadSettings() {
+        return new Promise((resolve) => {
+            const defaultSettings = {
+                enableWhitney: true,
+                enableAIC: true,
+                enableCleveland: true,
+                enableMet: true,
+                enableWikimedia: false
+            };
+
+            chrome.storage.local.get(defaultSettings, (result) => {
+                this.activeMuseums = {};
+                
+                if (result.enableWhitney) {
+                    this.activeMuseums.wht = this.museums.wht;
+                }
+                if (result.enableAIC) {
+                    this.activeMuseums.aic = this.museums.aic;
+                }
+                if (result.enableCleveland) {
+                    this.activeMuseums.cma = this.museums.cma;
+                }
+                if (result.enableMet) {
+                    this.activeMuseums.met = this.museums.met;
+                }
+                if (result.enableWikimedia) {
+                    this.activeMuseums.wmc = this.museums.wmc;
+                }
+                
+                resolve();
+            });
+        });
+    }
     getRandomMuseum() {
         const keys = Object.keys(this.activeMuseums);
         const randomKey = keys[Math.floor(Math.random() * keys.length)];
@@ -89,7 +126,9 @@ class MuseumArtApp {
             description,
             museumName,
             docs,
-            is_public_domain
+            is_public_domain,
+            museumShortcode,
+            objectId
         } = data;
 
         // Add to viewing history
@@ -117,7 +156,9 @@ class MuseumArtApp {
             description,
             museumName,
             docs,
-            is_public_domain
+            is_public_domain,
+            museumShortcode,
+            objectId
         });
         
         captionContainer.appendTo(objectLink);
@@ -165,15 +206,33 @@ class MuseumArtApp {
         // Add spacing before history details
         $('<br/>').appendTo(container);
         
-        // Public domain notice
+        // Public domain notice and postcard button
         if (data.is_public_domain) {
             const objPublicDomainContainer = $('<p class="objectPublicDomainContainer"></p>');
             objPublicDomainContainer.html('<span class="description">This object is in the public domain.</span>');
             objPublicDomainContainer.appendTo(container);
+
+            // Add postcard button if we have the necessary data
+            if (data.museumShortcode && data.objectId) {
+                this.createPostcardButton(container, data.museumShortcode, data.objectId);
+            }
         }
         
         // Add history details inside the caption container
         this.createHistoryDetailsInCaption(container);
+    }
+
+    createPostcardButton(container, museumShortcode, objectId) {
+        const postcardContainer = $('<p class="postcardContainer"></p>');
+        const postcardButton = $('<button class="postcardButton">Create Postcard</button>');
+        
+        postcardButton.on('click', () => {
+            const postcardUrl = `https://sweetpost.art/?museum=${museumShortcode}&object_id=${objectId}`;
+            window.open(postcardUrl, '_blank');
+        });
+        
+        postcardButton.appendTo(postcardContainer);
+        postcardContainer.appendTo(container);
     }
 
     addToHistory(data) {
@@ -239,7 +298,7 @@ class MuseumArtApp {
     createHistoryDetailsInCaption(container) {
         if (this.viewHistory.length === 0) return;
 
-        const detailsElement = $('<details class="viewHistory"><summary>Last 10 Viewed Artworks (' + this.viewHistory.length + ')</summary></details>');
+        const detailsElement = $('<details class="viewHistory"><summary>Recently viewed artworks</summary></details>');
         const historyList = $('<ul class="historyList"></ul>');
 
         this.viewHistory.forEach((item, index) => {
@@ -284,6 +343,152 @@ class Museum {
     }
 }
 
+// Natural History Museum London implementation
+class NaturalHistoryMuseumLondon extends Museum {
+    constructor() {
+        super({
+            museum: "Natural History Museum, London",
+            shortname: "nhm",
+            endPoint: "https://data.nhm.ac.uk/api/3/action/datastore_search",
+            docs: "https://data.nhm.ac.uk/about/download",
+            maxInt: "100000" // They have millions of records
+        });
+        
+        // Resource IDs for different types of visual collections
+        // These are some known datasets that contain images
+        this.visualResources = [
+            '05ff2255-c38a-40c9-b657-4ccb55ab2feb', // Specimens with images
+            '51e7a60c-cbda-4e88-8a68-ef93442643e6', // Herbarium specimens
+            '2e126baa-b256-4a3d-8659-483ce5a02e80', // Historical collections
+            '8c8314e9-98ce-479e-b87d-9eeb96604dbe'  // Clayton Herbarium
+        ];
+    }
+
+    getRandomUrl() {
+        // Pick a random resource that likely contains images
+        const randomResourceId = this.visualResources[Math.floor(Math.random() * this.visualResources.length)];
+        
+        // Random offset to get different results
+        const randomOffset = Math.floor(Math.random() * 1000);
+        
+        // Search for records with images
+        return `${this.endPoint}?resource_id=${randomResourceId}&limit=10&offset=${randomOffset}`;
+    }
+
+    async formatData(data) {
+        try {
+            if (!data.result || !data.result.records || data.result.records.length === 0) {
+                return { imgPath: '' };
+            }
+
+            // Filter records that have image data
+            const recordsWithImages = data.result.records.filter(record => {
+                return record.Image || record.image || record.ImageURL || record.image_url || 
+                       record._image_field || record.photo || record.photograph ||
+                       (record.format && record.format.toLowerCase().includes('jpg')) ||
+                       (record.format && record.format.toLowerCase().includes('png'));
+            });
+
+            if (recordsWithImages.length === 0) {
+                return { imgPath: '' };
+            }
+
+            // Pick a random record with images
+            const randomRecord = recordsWithImages[Math.floor(Math.random() * recordsWithImages.length)];
+            
+            // Extract data from the record
+            let title = randomRecord.Species || randomRecord.species || 
+                       randomRecord.ScientificName || randomRecord.scientific_name ||
+                       randomRecord.CommonName || randomRecord.common_name ||
+                       randomRecord.Title || randomRecord.title ||
+                       randomRecord.Name || randomRecord.name ||
+                       randomRecord.Barcode || randomRecord.barcode ||
+                       'Natural History Specimen';
+
+            let artist = randomRecord.Collector || randomRecord.collector ||
+                        randomRecord.Author || randomRecord.author ||
+                        randomRecord.Determiner || randomRecord.determiner ||
+                        randomRecord.IdentifiedBy || randomRecord.identified_by ||
+                        'Natural History Museum Collection';
+
+            let date = randomRecord.DateCollected || randomRecord.date_collected ||
+                      randomRecord.Date || randomRecord.date ||
+                      randomRecord.Year || randomRecord.year ||
+                      randomRecord.CollectionDate || randomRecord.collection_date ||
+                      '';
+
+            // Try to find the image URL
+            let imageUrl = randomRecord.Image || randomRecord.image || 
+                          randomRecord.ImageURL || randomRecord.image_url ||
+                          randomRecord.photo || randomRecord.photograph ||
+                          '';
+
+            // If no direct image URL, try to construct one from available data
+            if (!imageUrl && randomRecord._image_field) {
+                imageUrl = randomRecord[randomRecord._image_field];
+            }
+
+            // Some records may have relative URLs that need the base domain
+            if (imageUrl && imageUrl.startsWith('/')) {
+                imageUrl = `https://data.nhm.ac.uk${imageUrl}`;
+            }
+
+            // Extract location/geography info for nationality field
+            let location = randomRecord.Country || randomRecord.country ||
+                          randomRecord.Location || randomRecord.location ||
+                          randomRecord.Locality || randomRecord.locality ||
+                          randomRecord.Geography || randomRecord.geography ||
+                          '';
+
+            // Build description from available scientific data
+            let description = '';
+            const descFields = [
+                randomRecord.Description || randomRecord.description,
+                randomRecord.Notes || randomRecord.notes,
+                randomRecord.Habitat || randomRecord.habitat,
+                randomRecord.Family || randomRecord.family,
+                randomRecord.Order || randomRecord.order,
+                randomRecord.Class || randomRecord.class
+            ].filter(field => field && field.trim().length > 0);
+            
+            if (descFields.length > 0) {
+                description = descFields.join(' • ');
+            }
+
+            // Create a unique object URL
+            const objectId = randomRecord.Barcode || randomRecord.barcode ||
+                           randomRecord.CatalogueNumber || randomRecord.catalogue_number ||
+                           randomRecord.ID || randomRecord.id ||
+                           Math.random().toString(36).substr(2, 9);
+
+            const objectURL = `https://data.nhm.ac.uk/object/${objectId}`;
+
+            // Most scientific collections are public domain or have open licenses
+            const isPublicDomain = true;
+
+            return {
+                imgPath: imageUrl,
+                artistCulture: artist,
+                title: title,
+                nationality: location,
+                objectDate: date,
+                objectURL: objectURL,
+                culture: location,
+                description: description,
+                museumName: this.museum,
+                docs: this.docs,
+                is_public_domain: isPublicDomain,
+                museumShortcode: this.shortname,
+                objectId: objectId
+            };
+
+        } catch (error) {
+            console.error('Error formatting Natural History Museum data:', error);
+            return { imgPath: '' };
+        }
+    }
+}
+
 // Whitney Museum implementation
 class WhitneyMuseum extends Museum {
     constructor() {
@@ -311,19 +516,24 @@ class WhitneyMuseum extends Museum {
             artistName = await this.getArtist(artistId);
         }
 
+        // Extract object ID from TMS ID for postcard feature
+        const objectId = data.data?.attributes?.tms_id || '';
+
         return {
             imgPath: data.data?.attributes?.images?.[0]?.url || '',
             artistCulture: artistName,
             title: data.data?.attributes?.title || '',
             nationality: '',
             objectDate: data.data?.attributes?.display_date || '',
-            objectURL: data.data?.attributes?.tms_id 
-                ? `https://whitney.org/collection/works/${data.data.attributes.tms_id}` 
+            objectURL: objectId 
+                ? `https://whitney.org/collection/works/${objectId}` 
                 : '',
-            description: data.data?.attributes?.description || '',
+            description: data.data?.attributes?.object_label || '',
             museumName: this.museum,
             docs: this.docs,
             is_public_domain: false,
+            museumShortcode: this.shortname,
+            objectId: objectId
         };
     }
 
@@ -384,6 +594,8 @@ class ArtInstituteChicago extends Museum {
             museumName: this.museum,
             docs: this.docs,
             is_public_domain: artwork.is_public_domain || false,
+            museumShortcode: this.shortname,
+            objectId: artwork.id
         };
     }
 }
@@ -427,6 +639,8 @@ class ClevelandMuseum extends Museum {
             museumName: this.museum,
             docs: this.docs,
             is_public_domain: isPublicDomain,
+            museumShortcode: this.shortname,
+            objectId: artwork.id
         };
     }
 }
@@ -461,7 +675,146 @@ class MetropolitanMuseum extends Museum {
             museumName: this.museum,
             docs: this.docs,
             is_public_domain: data.isPublicDomain || false,
+            museumShortcode: this.shortname,
+            objectId: data.objectID
         };
+    }
+}
+
+// Wikimedia Commons implementation
+class WikimediaCommons extends Museum {
+    constructor() {
+        super({
+            museum: "Wikimedia Commons",
+            shortname: "wmc",
+            endPoint: "https://commons.wikimedia.org/w/api.php",
+            docs: "https://commons.wikimedia.org/wiki/Commons:API",
+            searchTerms: [
+                'painting oil canvas',
+                'sculpture marble bronze',
+                'renaissance art',
+                'impressionist painting',
+                'portrait painting',
+                'landscape painting',
+                'ancient sculpture',
+                'modern art',
+                'classical art',
+                'baroque painting'
+            ]
+        });
+    }
+
+    getRandomUrl() {
+        const searchTerm = this.searchTerms[Math.floor(Math.random() * this.searchTerms.length)];
+        const offset = Math.floor(Math.random() * 100);
+        
+        // Use search instead of category - this gets actual images
+        const url = `${this.endPoint}?action=query&format=json&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(searchTerm)}&gsrlimit=50&gsroffset=${offset}&prop=imageinfo&iiprop=url|extmetadata|size&origin=*`;
+        console.log('Wikimedia URL:', url);
+        return url;
+    }
+
+    async formatData(data) {
+        console.log('Wikimedia raw data:', data);
+        
+        try {
+            if (!data.query || !data.query.pages) {
+                console.log('No query/pages in Wikimedia response');
+                return { imgPath: '' };
+            }
+
+            const pages = Object.values(data.query.pages);
+            console.log('Total pages:', pages.length);
+            
+            const imagesOnly = pages.filter(page => {
+                if (!page.imageinfo || !page.imageinfo[0]) return false;
+                const info = page.imageinfo[0];
+                
+                // Filter for actual image files with reasonable dimensions
+                const hasUrl = info.url;
+                const isImageType = info.url && info.url.match(/\.(jpg|jpeg|png)$/i);
+                const hasSize = info.width && info.height;
+                const goodSize = info.width >= 400 && info.height >= 400; // Min dimensions
+                const notTooBig = info.width <= 5000 && info.height <= 5000; // Max dimensions
+                
+                return hasUrl && isImageType && hasSize && goodSize && notTooBig;
+            });
+
+            console.log('Images filtered:', imagesOnly.length);
+
+            if (imagesOnly.length === 0) {
+                console.log('No valid images found, retrying...');
+                return { imgPath: '' };
+            }
+
+            const randomPage = imagesOnly[Math.floor(Math.random() * imagesOnly.length)];
+            const imageInfo = randomPage.imageinfo[0];
+            const metadata = imageInfo.extmetadata || {};
+
+            console.log('Selected image:', imageInfo.url);
+
+            // Clean HTML from metadata
+            const stripHtml = (html) => {
+                if (!html) return '';
+                const tmp = document.createElement('div');
+                tmp.innerHTML = html;
+                return tmp.textContent || tmp.innerText || '';
+            };
+
+            const title = stripHtml(metadata.ObjectName?.value) || 
+                        stripHtml(metadata.ImageDescription?.value) || 
+                        randomPage.title.replace('File:', '').replace(/\.(jpg|jpeg|png)$/i, '');
+            
+            const artist = stripHtml(metadata.Artist?.value) || 
+                        stripHtml(metadata.Credit?.value) || 
+                        'Unknown';
+            
+            const date = stripHtml(metadata.DateTimeOriginal?.value) || 
+                        stripHtml(metadata.DateTime?.value) || '';
+
+            const description = stripHtml(metadata.ImageDescription?.value) || '';
+
+            // Extract filename from the title (it's in format "File:filename.jpg")
+            const filename = randomPage.title.replace('File:', '');
+
+            // Check license - only mark as public domain if it truly is
+            const licenseShortName = metadata.LicenseShortName?.value || '';
+            const licenseUrl = metadata.LicenseUrl?.value || '';
+            
+            // Public domain and compatible licenses
+            const publicDomainLicenses = [
+                'CC0',
+                'Public domain',
+                'PD',
+                'PDM', // Public Domain Mark
+            ];
+            
+            const isPublicDomain = publicDomainLicenses.some(license => 
+                licenseShortName.includes(license) || licenseUrl.includes('publicdomain')
+            );
+
+            console.log('License:', licenseShortName, 'Is PD:', isPublicDomain);
+
+            return {
+                imgPath: imageInfo.url,
+                artistCulture: artist.substring(0, 200), // Limit length
+                title: title.substring(0, 200),
+                nationality: '',
+                objectDate: date,
+                objectURL: imageInfo.descriptionurl,
+                culture: '',
+                description: description.substring(0, 300),
+                museumName: this.museum,
+                docs: this.docs,
+                is_public_domain: isPublicDomain,
+                museumShortcode: this.shortname,
+                objectId: filename
+            };
+
+        } catch (error) {
+            console.error('Error formatting Wikimedia Commons data:', error);
+            return { imgPath: '' };
+        }
     }
 }
 

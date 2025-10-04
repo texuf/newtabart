@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Tab New Art - Options</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-weight: 300;
+            color: #333;
+        }
+        h2 {
+            font-weight: 300;
+            color: #666;
+            font-size: 18px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        .option {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .option-info {
+            flex: 1;
+        }
+        .option-name {
+            font-size: 16px;
+            font-weight: 400;
+            color: #333;
+        }
+        .description {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* Toggle switch styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #ff4444;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            display: none;
+        }
+        .warning {
+            margin-top: 20px;
+            padding: 10px;
+            background: #ff9800;
+            color: white;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>New Tab New Art - Settings</h1>
+    
+    <h2>Art Sources</h2>
+    <p style="color: #666; font-size: 14px;">Select which sources to include in your new tab rotation. At least one source must be enabled.</p>
+    
+    <div class="option">
+        <div class="option-info">
+            <div class="option-name">Whitney Museum</div>
+            <div class="description">Contemporary American art from the Whitney Museum collection</div>
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="enableWhitney" checked>
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="option">
+        <div class="option-info">
+            <div class="option-name">Art Institute of Chicago</div>
+            <div class="description">World-renowned collection spanning thousands of years</div>
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="enableAIC" checked>
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="option">
+        <div class="option-info">
+            <div class="option-name">Cleveland Museum of Art</div>
+            <div class="description">Diverse collection with strong holdings in Asian and European art</div>
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="enableCleveland" checked>
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="option">
+        <div class="option-info">
+            <div class="option-name">Metropolitan Museum of Art</div>
+            <div class="description">One of the world's largest and most comprehensive art museums</div>
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="enableMet" checked>
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="option">
+        <div class="option-info">
+            <div class="option-name">Wikimedia Commons</div>
+            <div class="description">Public domain artworks from around the world</div>
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="enableWikimedia">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div id="status" class="status">Settings saved!</div>
+    <div id="warning" class="warning">At least one source must be enabled!</div>
+
+    <script src="options.js"></script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 html, body, #objectContainer {
   height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
   font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
   font-weight: 200; }
 
@@ -68,6 +68,25 @@ a {
     .captionContainer .description a {
       color: red; }
 
+/* Postcard Button Styling */
+.captionContainer .postcardContainer {
+  margin-top: 16px; }
+  .captionContainer .postcardContainer .postcardButton {
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    font-weight: 400;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    transition: background-color 0.2s ease; }
+    .captionContainer .postcardContainer .postcardButton:hover {
+      background-color: #cc3333; }
+    .captionContainer .postcardContainer .postcardButton:active {
+      background-color: #aa2222; }
+
 /* History Details Styling */
 .captionContainer .viewHistory {
   margin-top: 24px;
@@ -90,4 +109,17 @@ a {
       .captionContainer .viewHistory .historyItem a:hover {
         text-decoration: underline; }
 
-/*# sourceMappingURL=style.css.map */
+#settingsLink {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  font-size: 12px;
+  text-decoration: none;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+}
+
+#settingsLink:hover {
+  opacity: 1;
+}
