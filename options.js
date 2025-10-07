@@ -68,3 +68,106 @@ function showWarning() {
         warning.style.display = 'none';
     }, 3000);
 }
+
+// History Management
+function loadHistory() {
+    chrome.storage.local.get(['museumArtHistory'], (result) => {
+        const history = result.museumArtHistory || [];
+        displayHistory(history);
+    });
+}
+
+function displayHistory(history) {
+    const emptyHistory = document.getElementById('emptyHistory');
+    const historyTable = document.getElementById('historyTable');
+    const historyTableBody = document.getElementById('historyTableBody');
+    
+    if (history.length === 0) {
+        emptyHistory.style.display = 'block';
+        historyTable.style.display = 'none';
+        return;
+    }
+    
+    emptyHistory.style.display = 'none';
+    historyTable.style.display = 'table';
+    historyTableBody.innerHTML = '';
+    
+    history.forEach((item) => {
+        const row = document.createElement('tr');
+        
+        // Title cell
+        const titleCell = document.createElement('td');
+        const titleLink = document.createElement('a');
+        titleLink.href = item.objectURL;
+        titleLink.target = '_blank';
+        titleLink.rel = 'noopener';
+        titleLink.className = 'history-link';
+        titleLink.textContent = item.title;
+        titleCell.appendChild(titleLink);
+        
+        // Add public domain badge to title if applicable
+        if (item.is_public_domain) {
+            const pdBadge = document.createElement('span');
+            pdBadge.className = 'pd-badge';
+            pdBadge.textContent = 'PD';
+            pdBadge.title = 'Public Domain';
+            titleCell.appendChild(pdBadge);
+        }
+        
+        // Artist cell
+        const artistCell = document.createElement('td');
+        artistCell.textContent = item.artist || 'Unknown';
+        
+        // Museum cell
+        const museumCell = document.createElement('td');
+        museumCell.textContent = item.museum;
+        
+        // Timestamp cell
+        const timeCell = document.createElement('td');
+        timeCell.textContent = item.timestamp;
+        timeCell.style.fontSize = '0.85rem';
+        
+        // Action cell (postcard button)
+        const actionCell = document.createElement('td');
+        if (item.is_public_domain && item.museumShortcode && item.objectId) {
+            const postcardBtn = document.createElement('button');
+            postcardBtn.className = 'postcard-button';
+            postcardBtn.textContent = 'Create Postcard';
+            postcardBtn.addEventListener('click', () => {
+                const postcardUrl = `https://sweetpost.art/?museum=${item.museumShortcode}&object_id=${item.objectId}`;
+                window.open(postcardUrl, '_blank');
+            });
+            actionCell.appendChild(postcardBtn);
+        } else {
+            actionCell.textContent = '-';
+            actionCell.style.color = '#ccc';
+            actionCell.style.textAlign = 'center';
+        }
+        
+        row.appendChild(titleCell);
+        row.appendChild(artistCell);
+        row.appendChild(museumCell);
+        row.appendChild(timeCell);
+        row.appendChild(actionCell);
+        
+        historyTableBody.appendChild(row);
+    });
+}
+
+// Clear history functionality
+document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear your viewing history?')) {
+        chrome.storage.local.set({ museumArtHistory: [] }, () => {
+            loadHistory();
+            showStatus();
+        });
+    }
+});
+
+// Load history on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadHistory();
+    
+    // Refresh history every few seconds in case it's updated from another tab
+    setInterval(loadHistory, 3000);
+});

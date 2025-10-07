@@ -1,7 +1,7 @@
 {
   "name": "New Tab New Art",
   "short_name": "New Tab New Art",
-  "version": "2025.4",
+  "version": "2025.5",
   "description": "See a new piece of art every time you open a tab.",
   "manifest_version": 3,
   "permissions": ["storage"],

@@ -87,39 +87,17 @@ a {
     .captionContainer .postcardContainer .postcardButton:active {
       background-color: #aa2222; }
 
-/* History Details Styling */
-.captionContainer .viewHistory {
-  margin-top: 24px;
-  font-size: .8rem;
-  color: #7a7a7a; }
-  .captionContainer .viewHistory summary {
-    cursor: pointer;
-    font-size: .8rem;
-    color: #7a7a7a; }
-  .captionContainer .viewHistory .historyList {
-    margin: 8px 0 0 0;
-    padding-left: 20px;
-    line-height: 1.4; }
-  .captionContainer .viewHistory .historyItem {
-    margin-bottom: 4px;
-    font-size: .8rem; }
-    .captionContainer .viewHistory .historyItem a {
-      color: red;
-      text-decoration: none; }
-      .captionContainer .viewHistory .historyItem a:hover {
-        text-decoration: underline; }
-
 #settingsLink {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  font-size: 12px;
+  display: inline-block;
+  margin-top: 24px;
+  font-size: 0.8rem;
+  color: red;
   text-decoration: none;
-  opacity: 0.6;
+  opacity: 0.8;
   transition: opacity 0.2s ease;
-  z-index: 1000;
 }
 
 #settingsLink:hover {
   opacity: 1;
+  text-decoration: underline;
 }
