@@ -39,7 +39,8 @@ class MuseumArtApp {
                 enableWikimedia: false
             };
 
-            chrome.storage.local.get(defaultSettings, (result) => {
+            const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
+            browserAPI.storage.local.get(defaultSettings, (result) => {
                 this.activeMuseums = {};
                 if (result.enableWhitney) this.activeMuseums.wht = this.museums.wht;
                 if (result.enableAIC) this.activeMuseums.aic = this.museums.aic;
@@ -144,6 +145,10 @@ class MuseumArtApp {
         const description = $('<p class="descriptionContainer"><span class="description">This artwork is sourced from the <a href="'+data.docs+'">'+data.museumName+' Collection API</a>. This browser extension is not affiliated with the museum. The source code for the extension can be found on <a href="https://github.com/jaymollica/newtabart">github</a>.</span></p>');
         description.appendTo(container);
 
+        // Add settings link
+        const settingsLink = $('<a id="settingsLink" href="options.html">⚙ Settings</a>');
+        settingsLink.appendTo(container);
+
         $('<br/>').appendTo(container);
         
         if (data.is_public_domain) {
@@ -155,12 +160,6 @@ class MuseumArtApp {
                 this.createPostcardButton(container, data.museumShortcode, data.objectId);
             }
         }
-
-        // Add settings and history link at the bottom
-        const settingsLinkContainer = $('<p style="margin-top: 24px;"></p>');
-        const settingsLink = $('<a href="options.html" id="settingsLink">Settings and history</a>');
-        settingsLink.appendTo(settingsLinkContainer);
-        settingsLinkContainer.appendTo(container);
     }
 
     createPostcardButton(container, museumShortcode, objectId) {
@@ -198,8 +197,9 @@ class MuseumArtApp {
 
     loadHistory() {
         try {
-            if (typeof chrome !== 'undefined' && chrome.storage) {
-                chrome.storage.local.get([this.storageKey], (result) => {
+            const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
+            if (typeof browserAPI !== 'undefined' && browserAPI.storage) {
+                browserAPI.storage.local.get([this.storageKey], (result) => {
                     this.viewHistory = result[this.storageKey] || [];
                 });
             } else {
@@ -214,10 +214,11 @@ class MuseumArtApp {
 
     saveHistory() {
         try {
-            if (typeof chrome !== 'undefined' && chrome.storage) {
+            const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
+            if (typeof browserAPI !== 'undefined' && browserAPI.storage) {
                 const data = {};
                 data[this.storageKey] = this.viewHistory;
-                chrome.storage.local.set(data);
+                browserAPI.storage.local.set(data);
             } else {
                 localStorage.setItem(this.storageKey, JSON.stringify(this.viewHistory));
             }

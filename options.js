@@ -7,8 +7,10 @@ const defaultSettings = {
     enableWikimedia: false
 };
 
+const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
+
 // Load saved settings
-chrome.storage.local.get(defaultSettings, (result) => {
+browserAPI.storage.local.get(defaultSettings, (result) => {
     document.getElementById('enableWhitney').checked = result.enableWhitney;
     document.getElementById('enableAIC').checked = result.enableAIC;
     document.getElementById('enableCleveland').checked = result.enableCleveland;
@@ -47,7 +49,7 @@ checkboxes.forEach(checkbox => {
             enableWikimedia: document.getElementById('enableWikimedia').checked
         };
 
-        chrome.storage.local.set(settings, () => {
+        browserAPI.storage.local.set(settings, () => {
             showStatus();
         });
     });
@@ -71,7 +73,7 @@ function showWarning() {
 
 // History Management
 function loadHistory() {
-    chrome.storage.local.get(['museumArtHistory'], (result) => {
+    browserAPI.storage.local.get(['museumArtHistory'], (result) => {
         const history = result.museumArtHistory || [];
         displayHistory(history);
     });
@@ -139,9 +141,8 @@ function displayHistory(history) {
             });
             actionCell.appendChild(postcardBtn);
         } else {
-            actionCell.textContent = '-';
+            actionCell.textContent = '—';
             actionCell.style.color = '#ccc';
-            actionCell.style.textAlign = 'center';
         }
         
         row.appendChild(titleCell);
@@ -157,7 +158,7 @@ function displayHistory(history) {
 // Clear history functionality
 document.getElementById('clearHistoryBtn').addEventListener('click', () => {
     if (confirm('Are you sure you want to clear your viewing history?')) {
-        chrome.storage.local.set({ museumArtHistory: [] }, () => {
+        browserAPI.storage.local.set({ museumArtHistory: [] }, () => {
             loadHistory();
             showStatus();
         });
